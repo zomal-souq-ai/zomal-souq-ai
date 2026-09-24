@@ -1,0 +1,16 @@
+{
+  "name": "zomal-souq-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "npm ci --include=dev --no-audit --no-fund",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "vite": "^7.1.7"
+  }
+}
