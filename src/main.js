@@ -1,26 +1,45 @@
-import "./style.css";import{supabase,getSession,signUpUser,signInUser,signOutUser,getProducts,getMyStores,createStore,getMyProducts,createProduct}from"./supabase.js";
-const app=document.querySelector("#app");let cart=JSON.parse(localStorage.getItem("zomal_cart")||"[]"),session=null,products=[];
-const demo=[["عطر فاخر للرجال","عطور",159,"🧴","متجر النخبة"],["سماعة لاسلكية","إلكترونيات",129,"🎧","متجر التقنية"],["حذاء رياضي عصري","أزياء",189,"👟","ستايل ستور"],["صندوق هدايا فاخر","هدايا",149,"🎁","هداياك"]];
-app.innerHTML=`<header><div class="wrap nav"><a class="logo">✦ سوق <b>AI</b></a><nav><a href="#home">الرئيسية</a><a href="#categories">الأقسام</a><a href="#products">المنتجات</a><a href="#merchants">للتجار</a></nav><div class="actions"><button id="cartBtn">🛒 <i id="count">0</i></button><button class="primary" id="accountBtn">حسابي</button><button class="primary" id="merchantBtn">للتجار</button></div></div></header>
-<section class="hero" id="home"><div class="wrap heroGrid"><div><span class="badge">✨ التسوق أصبح أذكى</span><h1>قل لنا ماذا تريد...<span>والـ AI يبحث لك</span></h1><p>سوق ذكي يجمع منتجات المتاجر في مكان واحد.</p><div class="search"><input id="query" placeholder="مثال: أريد عطر رجالي أقل من 200 ريال"><button id="ai">🤖 اسأل AI</button></div><div id="result" class="result"></div></div><div class="heroCard"><div>AI</div><h3>مساعد التسوق الذكي</h3><p>سنربط الذكاء الاصطناعي الحقيقي بالمنتجات في المرحلة التالية.</p></div></div></section>
-<section id="categories"><div class="wrap"><h2>تسوق حسب القسم</h2><div class="cats">${[["عطور","🧴"],["أزياء","👕"],["إلكترونيات","📱"],["هدايا","🎁"],["منزل","🏠"]].map(x=>`<button class="cat" data-cat="${x[0]}">${x[1]}<b>${x[0]}</b></button>`).join("")}</div></div></section>
-<section id="products"><div class="wrap"><div class="head"><h2>المنتجات</h2><span id="status">جاري التحميل...</span></div><div id="grid" class="products"></div></div></section>
-<section id="merchants" class="merchant"><div class="wrap"><span class="badge">🏪 للتجار</span><h2>عندك متجر؟ <span>أضف منتجاتك إلى سوق AI.</span></h2><p>أنشئ حساب تاجر ثم متجرك وأضف المنتجات مباشرة إلى Supabase.</p><button class="primary" id="openMerchant">فتح لوحة التاجر</button></div></section><footer>© 2026 Zomal Souq AI</footer>
-<div class="modal" id="auth"><div class="box"><button class="close" data-close="auth">×</button><h2 id="authTitle">تسجيل الدخول</h2><div class="tabs"><button data-mode="login">دخول</button><button data-mode="signup">حساب جديد</button></div><form id="authForm"><div id="nameWrap" class="hide"><input id="fullName" placeholder="الاسم الكامل"></div><input id="email" type="email" required placeholder="البريد الإلكتروني"><input id="password" type="password" minlength="6" required placeholder="كلمة المرور"><div id="roleWrap" class="hide"><select id="role"><option value="customer">عميل</option><option value="merchant">تاجر</option></select></div><button class="primary wide" id="authSubmit">دخول</button></form><p id="authMsg"></p></div></div>
-<div class="modal" id="merchantModal"><div class="box large"><button class="close" data-close="merchantModal">×</button><h2>🏪 لوحة التاجر</h2><div id="merchantContent"></div></div></div>
-<div class="modal" id="cartModal"><div class="box"><button class="close" data-close="cartModal">×</button><h2>🛒 السلة</h2><div id="cartItems"></div><h3>الإجمالي: <span id="total">0</span> ر.س</h3><button class="primary wide" id="checkout">إتمام الطلب</button></div></div>`;
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],open=id=>$("#"+id).style.display="flex",close=id=>$("#"+id).style.display="none";$$("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
-function esc(x=""){return String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function render(list){$("#grid").innerHTML=list.length?list.map(p=>`<article class="product"><div class="pic">${p.image_url?`<img src="${esc(p.image_url)}">`:p.emoji||"🛍️"}</div><div class="info"><small>${esc(p.stores?.name||p.store||"متجر")}</small><h3>${esc(p.name)}</h3><b>${Number(p.price).toLocaleString("ar-SA")} ر.س</b><button class="add" data-id="${esc(p.id)}">أضف للسلة</button></div></article>`).join(""):`<div class="empty">لا توجد منتجات.</div>`;$$(".add").forEach(b=>b.onclick=()=>{let p=list.find(x=>String(x.id)===b.dataset.id);cart.push({name:p.name,price:Number(p.price)});localStorage.setItem("zomal_cart",JSON.stringify(cart));updateCart();b.textContent="تمت الإضافة ✓";setTimeout(()=>b.textContent="أضف للسلة",900)})}
-async function load(cat=""){let{data,error}=await getProducts(cat);if(error||!data?.length){products=demo.map((x,i)=>({id:"d"+i,name:x[0],category:x[1],price:x[2],emoji:x[3],store:x[4]}));$("#status").textContent=error?"وضع تجريبي":"لا توجد منتجات حقيقية بعد";}else{products=data;$("#status").textContent=data.length+" منتج"}render(products)}
-function updateCart(){$("#count").textContent=cart.length;$("#cartItems").innerHTML=cart.length?cart.map((x,i)=>`<div class="cartrow"><span>${esc(x.name)}</span><b>${x.price} ر.س <button class="danger" data-r="${i}">حذف</button></b></div>`).join(""):`<div class="empty">السلة فارغة.</div>`;$("#total").textContent=cart.reduce((a,x)=>a+x.price,0);$$("[data-r]").forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.r,1);localStorage.setItem("zomal_cart",JSON.stringify(cart));updateCart()})}
-$("#cartBtn").onclick=()=>{updateCart();open("cartModal")};$("#checkout").onclick=()=>alert("الدفع والطلبات سيتم ربطهما في المرحلة التالية.");
-$$(".cat").forEach(b=>b.onclick=()=>load(b.dataset.cat));$("#ai").onclick=()=>{let q=$("#query").value.trim();$("#result").style.display="block";$("#result").innerHTML=q?`🤖 فهمت طلبك: <b>${esc(q)}</b><br><small>البحث الذكي الكامل سيتم ربطه لاحقًا.</small>`:"اكتب طلبك أولًا."};
-let mode="login";function setMode(m){mode=m;$("#authTitle").textContent=m==="login"?"تسجيل الدخول":"إنشاء حساب";$("#nameWrap").classList.toggle("hide",m==="login");$("#roleWrap").classList.toggle("hide",m==="login");$("#authSubmit").textContent=m==="login"?"دخول":"إنشاء الحساب"}$$("[data-mode]").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
-$("#accountBtn").onclick=()=>{if(session)openMerchant();else{setMode("login");open("auth")}};$("#merchantBtn").onclick=$("#openMerchant").onclick=async()=>{if(!session){setMode("login");open("auth");return}open("merchantModal");await dashboard()};
-$("#authForm").onsubmit=async e=>{e.preventDefault();let r=mode==="login"?await signInUser($("#email").value,$("#password").value):await signUpUser($("#email").value,$("#password").value,$("#fullName").value,$("#role").value);if(r.error){$("#authMsg").textContent=r.error.message;return}session=r.data.session;if(session){close("auth");await dashboard()}else $("#authMsg").textContent="تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلًا."};
-async function dashboard(){let meta=session.user.user_metadata||{};if(meta.role!=="merchant"){$("#merchantContent").innerHTML=`<div class="notice">هذا الحساب عميل. أنشئ حسابًا جديدًا بنوع تاجر.</div><button class="danger wide" id="logout">تسجيل الخروج</button>`;$("#logout").onclick=async()=>{await signOutUser();session=null;close("merchantModal")};return}let{data:stores,error}=await getMyStores(session.user.id);if(error){$("#merchantContent").innerHTML=`<div class="notice">${esc(error.message)}</div>`;return}let ids=(stores||[]).map(s=>s.id),mp=(await getMyProducts(ids)).data||[];$("#merchantContent").innerHTML=`<div class="panel"><h3>إنشاء متجر</h3><form id="storeForm"><input id="sname" required placeholder="اسم المتجر"><textarea id="sdesc" placeholder="وصف المتجر"></textarea><button class="primary wide">إنشاء المتجر</button></form>${stores?.map(s=>`<p>🏪 ${esc(s.name)}</p>`).join("")||""}</div><div class="panel"><h3>إضافة منتج</h3>${stores?.length?`<form id="productForm"><select id="ps">${stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select><input id="pn" required placeholder="اسم المنتج"><textarea id="pd" placeholder="وصف المنتج"></textarea><select id="pc"><option>عطور</option><option>أزياء</option><option>إلكترونيات</option><option>هدايا</option><option>منزل</option></select><input id="pp" type="number" min="0" required placeholder="السعر"><input id="pst" type="number" min="0" value="0" placeholder="المخزون"><input id="pi" type="url" placeholder="رابط الصورة"><button class="primary wide">حفظ المنتج</button></form>`:"أنشئ متجرًا أولًا."}</div><div class="panel"><h3>منتجاتي</h3>${mp.map(p=>`<p>${esc(p.name)} — ${p.price} ر.س</p>`).join("")||"لا توجد منتجات بعد."}</div><button class="danger wide" id="logout">تسجيل الخروج</button>`;
-$("#storeForm").onsubmit=async e=>{e.preventDefault();let r=await createStore(session.user.id,$("#sname").value,$("#sdesc").value,"");if(r.error)alert(r.error.message);else await dashboard()};
-let pf=$("#productForm");if(pf)pf.onsubmit=async e=>{e.preventDefault();let r=await createProduct({store_id:$("#ps").value,name:$("#pn").value,description:$("#pd").value,category:$("#pc").value,price:+$("#pp").value,stock:+$("#pst").value,image_url:$("#pi").value||null,active:true});if(r.error)alert(r.error.message);else{alert("تم حفظ المنتج في Supabase ✅");await dashboard();load()}};
-$("#logout").onclick=async()=>{await signOutUser();session=null;close("merchantModal")}}
-getSession().then(s=>session=s);supabase.auth.onAuthStateChange((_e,s)=>session=s);updateCart();load();
+// تشغيل واجهة زمل سوق AI
+document.addEventListener('DOMContentLoaded', () => {
+  const app = document.getElementById('app') || document.body;
+  
+  app.innerHTML = `
+    <div style="min-height: 100vh; background-color: #f9fafb; display: flex; flex-direction: column; align-items: center; padding: 16px; font-family: Tahoma, sans-serif;">
+      
+      <!-- الهيدر العلوي -->
+      <div style="width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <span style="font-size: 20px; font-weight: bold; color: #1f2937;">زمل سوق AI</span>
+        <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #dbeafe; display: flex; align-items: center; justify-content: center; font-size: 20px;">🤖</div>
+      </div>
+
+      <!-- البطاقة الزرقاء الرئيسية -->
+      <div style="width: 100%; max-width: 400px; background: linear-gradient(to bottom, #1e3a8a, #1d4ed8); border-radius: 24px; padding: 24px; color: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 24px; text-align: center;">
+        <div style="display: inline-block; background-color: rgba(30, 64, 175, 0.6); padding: 4px 16px; border-radius: 9999px; font-size: 12px; margin-bottom: 16px; color: #bfdbfe;">
+          التسوق أصبح أذكى
+        </div>
+        
+        <h1 style="font-size: 28px; font-weight: 850; margin-bottom: 12px; line-height: 1.2;">
+          كل المتاجر في مكان واحد
+        </h1>
+        
+        <p style="font-size: 14px; color: #dbeafe; margin-bottom: 24px; line-height: 1.5;">
+          قل لنا ماذا تريد، واستكشف المنتجات والمتاجر من خلال تجربة تسوق ذكية وسهلة في زمل سوق AI.
+        </p>
+
+        <!-- صندوق البحث -->
+        <div style="background: white; border-radius: 16px; padding: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 8px;">
+          <input 
+            type="text" 
+            placeholder="مثال: عطر، سماعة، حذاء، أو هدية" 
+            style="width: 100%; padding: 10px 14px; font-size: 14px; border: none; outline: none; background: transparent; color: #374151; text-align: right;"
+          />
+          <button 
+            style="width: 100%; background-color: #10b981; color: white; font-weight: bold; padding: 12px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px;"
+          >
+            <span>✨ اسأل AI</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  `;
+});
