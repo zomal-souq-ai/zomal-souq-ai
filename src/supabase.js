@@ -34,3 +34,23 @@ export const getProducts = async (category = "") => {
   }
   return data;
 };
+
+export const getMyStores = async (ownerId) => {
+  return await supabase.from("stores").select("*").eq("owner_id", ownerId);
+};
+
+export const createStore = async (ownerId, name, description, image_url = "") => {
+  return await supabase
+    .from("stores")
+    .insert({ owner_id: ownerId, name, description, image_url: image_url || null })
+    .select();
+};
+
+export const getMyProducts = async (storeIds = []) => {
+  if (!storeIds.length) return { data: [], error: null };
+  return await supabase.from("products").select("*").in("store_id", storeIds);
+};
+
+export const createProduct = async (product) => {
+  return await supabase.from("products").insert(product).select();
+};
