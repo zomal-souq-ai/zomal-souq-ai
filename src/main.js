@@ -5,7 +5,25 @@ import {
 } from "./supabase.js";
 
 const app = document.querySelector("#app");
-let cart = JSON.parse(localStorage.getItem("zomal_cart")) || [];
+let cart = // بناء واجهة المستخدم الرئيسية (HTML) مع العنوان الجديد
+app.innerHTML = `
+<header><div class="wrap nav"><a class="logo">💎 سوق AI</a><nav><a href="#home">الرئيسية</a><a href="#stores">المتاجر</a><button id="accountBtn">حسابي</button></nav></div></header>
+<section class="hero" id="home">
+    <div class="wrap heroGrid" style="text-align: center; padding: 40px 20px;">
+        <div style="margin-bottom: 20px;">
+            <h1 style="font-size: 2.5rem; color: #fff; margin-bottom: 10px; font-weight: bold;">وش بخاطرك؟ 🤔</h1>
+            <p style="font-size: 1.2rem; color: #ddd;">اكتب ما تبحث عنه ودع الـ AI يطوف بين المتاجر ويجيبه لك</p>
+        </div>
+        <div class="search-container" style="max-width: 500px; margin: 0 auto; display: flex; gap: 10px;">
+            <input type="text" id="aiSearchInput" placeholder="مثلاً: عطر صيفي فخم وثابت..." style="flex: 1; padding: 12px 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;" />
+            <button id="askAiBtn" style="padding: 12px 24px; background: #0070f3; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">ابحث بالـ AI</button>
+        </div>
+    </div>
+</section>
+<section id="categories"><div class="wrap"><h2>تسوق حسب القسم</h2><div class="cats"></div></div></section>
+<section id="products"><div class="wrap"><div class="head"><h2>المنتجات</h2><span id="status"></span></div><div class="grid" id="grid"></div></div></section>
+<section id="merchants" class="merchant"><div class="wrap"><span class="badge">عندك متجر؟ أضف منتجاتك إلى سوق AI.</span><button id="merchantModalBtn">فتح لوحة التاجر</button></div></section>
+`;
 let session = null;
 
 // المنتجات الافتراضية
